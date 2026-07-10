@@ -1,45 +1,69 @@
-from fastapi import FastAPI
-from typing import Optional
+from fastapi import FastAPI, status, HTTPException, Request
+from fastapi.responses import JSONResponse
+from typing import Optional, Any
 from pydantic import BaseModel, Field
+from datetime import datetime
 
 app = FastAPI(title="API của Dương", description="Những API của Dương")
 
 
-products = [
-    {"id": 1, "name": "Keyboard", "price": 500000},
-    {"id": 2, "name": "Mouse", "price": 300000},
+books = [
+    {
+        "id": 1,
+        "title": "Python Basic",
+        "author": "Lê Minh Thu",
+        "category": "programming",
+        "year": 2022,
+        "is_available": True,
+    },
+    {
+        "id": 2,
+        "title": "Web API Design",
+        "author": "Phạm Lan Hồng",
+        "category": "web",
+        "year": 2021,
+        "is_available": True,
+    },
+    {
+        "id": 3,
+        "title": "Database System",
+        "author": "Lê Minh Huyền",
+        "category": "database",
+        "year": 2020,
+        "is_available": False,
+    },
 ]
 
 
-class ProductModel(BaseModel):
-    name: str = Field(min_length=1)
-    price: float = Field(gt=0)
+class BaseReponse:
+    statusCode: str
+    message: str
+    data: Any | None
+    error: str | None
+    timestamps: str
+    path: str
 
 
-@app.post("/products")
-def add_product(product: ProductModel):
-    newData = {
-        "id": max(product["id"] for product in products) + 1,
-        "name": product.name,
-        "price": product.price,
-    }
-
-    products.append(newData)
-    return {"message": "thêm thành công", "data": newData}
-
-
-@app.get("/products")
-def get_all_pro():
-    if not products:
-        return {"message": "Danh sách rỗng!"}
-
-    return products
+def create_reponse(statusCode: int, message: str, data: None,timestamps = "", error=None, path=""):
+    return JSONResponse(
+        status_code=statusCode,
+        content={
+            "message": message,
+            "data": data,
+            "errors": error,
+            "timestamps": timestamps,
+            "path": path,
+        },
+    )
 
 
-@app.delete("/products/{product_id}")
-def delete_product(product_id: int):
-    for product in products:
-        if product["id"] == product_id:
-            products.remove(product)
-            return {"Message": "Xóa thành công"}
-    return {"Message": "Không tìm thấy sản phẩm"}
+@app.get("/books")
+def get_book(request: Request):
+    return create_reponse(
+        message="Lấy dữ liệu thành công",
+        statusCode= status.HTTP_200_OK,
+        data = books,
+        error="",
+        timestamps=datetime.now().isoformat(),
+        path= request.url.path
+    )
